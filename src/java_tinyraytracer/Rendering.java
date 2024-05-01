@@ -2,6 +2,7 @@ package java_tinyraytracer;
 
 import java.io.FileWriter;
 import java.io.BufferedWriter;
+import java.io.FileOutputStream;
 import java.util.Formatter;
 import java.util.ArrayList;
 
@@ -23,67 +24,28 @@ public class Rendering {
 	public void renderToFile(int width, int height) {
 		createPPMFile(width, height);
 		try {
-			FileWriter fwrite = new FileWriter("../java_tinyraytracer/img.ppm", true);
-			BufferedWriter bwrite = new BufferedWriter(fwrite);
+			/**
+			 * Using FileOutputStream instead of FileWriter and BufferedWriter since binary data is to
+			 * be written to the P6 PPM format
+			 */
+			FileOutputStream fstream = new FileOutputStream("../java_tinyraytracer/img.ppm", true);
 			
-			
-			ArrayList<Vec3f> framebuffer = new ArrayList<Vec3f>(256*256);
-			  
-			/***for(int i=0;i<height*width;i++) {
-				framebuffer.add(new Vec3f(0, 100, 0));
-			}***/
+			ArrayList<Vec3f> framebuffer = new ArrayList<Vec3f>(width*height);
 			
 			for (int j = 0; j<width; j++) {
-		        for (int i = 0; i<height; i++) {\
-		        	// fill all the pixel with (0, 127, 127) i.e cyan
-		        	framebuffer.add(i+j*256, new Vec3f(0, 127, 127));
-		            //framebuffer[i+j*width] = Vec3f(j/float(height),i/float(width), 0);
+		        for (int i = 0; i<height; i++) {
+		        	// fill all the pixel with (0, 255, 255) i.e cyan
+		        	framebuffer.add(i+j*width, new Vec3f(0, 255, 255));
 		        }
 		    }
 			
-			
-			/***for (int i = 0; i < height*width; i++) {
-		        for (int j = 0; j<3; j++) {
-		            bwrite.write((char) (int)( Math.max(0.f, Math.min(1.f, (framebuffer.get(i)).rgb[j]))));
-		        }
-		    }***/
-			
-			for (int i = 0; i < height*width; i++) {
-		        for (int j = 0; j<3; j++) {
-		            bwrite.write((char) (int)(framebuffer.get(i)).rgb[j]);
+			for(int i = 0; i < height*width; i++) {
+		        for(int j = 0; j<3; j++) {
+		        	byte val = (byte)(framebuffer.get(i)).rgb[j];
+		        	fstream.write(val);
 		        }
 		    }
-			
-			
-			/****for(int i=0;i<height*width;i++) {
-				for(int j=0;j<3;j++) {
-					if(i<(256*256)/2) {
-						if(j==0) {
-							bwrite.write((char)255);
-						}
-						else if(j==1) {
-							bwrite.write((char)255);
-						}
-						else if(j==2){
-							bwrite.write((char)255);
-						}
-					}
-					else {
-						if(j==0) {
-							bwrite.write((char)255);
-						}
-						else if(j==1) {
-							bwrite.write((char)255);
-						}
-						else if(j==2){
-							bwrite.write((char)255);
-						}
-					}
-					
-				}
-			}****/
-			bwrite.close();
-			
+			fstream.close();
 		}
 		catch (Exception e) {
 			System.out.println("Cannot open img.ppm to write");
