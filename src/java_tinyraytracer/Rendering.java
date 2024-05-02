@@ -34,13 +34,13 @@ public class Rendering {
 			for (int j = 0; j<height; j++) {
 		        for (int i = 0; i<width; i++) {
 		        	// filling pixels with a gradient of colors
-		        	framebuffer.add(i+j*width, new Vec3f(j/(float)(height),i/(float)(width), 0));
+		        	framebuffer.add(i+j*width, new Vec3f(j/(float)height, i/(float)width, 0));
 		        }
 		    }
 			// write pixel values to .ppm image file
 			for (int i = 0; i < height*width; i++) {
 		        for (int j = 0; j<3; j++) {
-		            fstream.write((byte)( 255 * Math.max(0.f, Math.min(1.f, (framebuffer.get(i)).rgb[j]))));
+		            fstream.write((byte)( 255 * Math.max(0.f, Math.min(1.f, (framebuffer.get(i)).points[j]))));
 		        }
 		    }
 			

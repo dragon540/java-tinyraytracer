@@ -2,11 +2,12 @@ package java_tinyraytracer;
 
 // Object type to store r, g, b values of every pixel
 public class Vec3f {
-	public float [] rgb = new float[3];
+	public float [] points = new float[3];
 	
-	public Vec3f(float red, float green, float blue) {
-		rgb[0] = red;
-		rgb[1] = green;
-		rgb[2] = blue;
+	public Vec3f(float x, float y, float z) {
+		points[0] = x;
+		points[1] = y;
+		points[2] = z;
 	}
+	
 }
