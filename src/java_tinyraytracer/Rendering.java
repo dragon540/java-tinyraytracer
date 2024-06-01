@@ -44,7 +44,7 @@ public class Rendering {
 			// foreground : brown
 			Vec3f c2 = new Vec3f(181, 101, 29);
 			
-			Sphere sphere = new Sphere(128, 128, 0, 2);
+			Sphere sphere = new Sphere(100, 100, 0, 15);
 			
 			render2(height, width, sphere, framebuffer, c1, c2);
 			
@@ -130,18 +130,14 @@ public class Rendering {
 	 * To check if a given ray intersects a sphere (defined in Sphere.java),
 	 * when the origin of the ray and the direction of the ray is given.
 	 **/
-	public boolean ray_intersect(Vec3f origin, Vec3f dir, Sphere sphere) {
-		//sphere.center.points[0] = 5;
-		//sphere.center.points[1] = 5;
-		//sphere.center.points[2] = 5;
+	public boolean ray_intersect(Vec3f origin, Vec3f dir, Sphere sphere, float i, float j) {
+		Vec3f scenterToinit = sub(sphere.center, new Vec3f(i, j, 0));
 		
+		float x_vec = scenterToinit.points[0];
+		float y_vec = scenterToinit.points[1];
+		float z_vec = scenterToinit.points[2];
 		
-		Vec3f scenterToOrigin = sub(sphere.center, origin);
-		float x_vec = scenterToOrigin.points[0];
-		float y_vec = scenterToOrigin.points[1];
-		float z_vec = scenterToOrigin.points[2];
-		
-		float angle_cosine = dot_product(scenterToOrigin, dir)/(magn(scenterToOrigin));
+		float angle_cosine = dot_product(scenterToinit, dir)/(magn(scenterToinit));
 		
 		System.out.println(magn(dir)); // for debugging
 		
@@ -152,10 +148,10 @@ public class Rendering {
 		System.out.println("radius" + sphere.radius);
 		System.out.println("distance" + distance);
 		System.out.println("cosine" + angle_cosine);
-		System.out.println("magn(scenter)" + magn(scenterToOrigin));
-		System.out.println("_x" + sphere.center.points[0]);
-		System.out.println("_y" + sphere.center.points[1]);
-		System.out.println("_z" + sphere.center.points[2]);
+		System.out.println("magn(scenter)" + magn(scenterToinit));
+		System.out.println("_x" + scenterToinit.points[0]);
+		System.out.println("_y" + scenterToinit.points[1]);
+		System.out.println("_z" + scenterToinit.points[2]);
 		
 		if(distance > sphere.radius) {
 			return false;
@@ -166,8 +162,8 @@ public class Rendering {
 	}
 	
 	
-	public Vec3f cast_ray(Vec3f origin, Vec3f dir, Sphere sphere, Vec3f col1, Vec3f col2) {
-		if(ray_intersect(origin, dir, sphere) == true) {
+	public Vec3f cast_ray(Vec3f origin, Vec3f dir, Sphere sphere, Vec3f col1, Vec3f col2, float i, float j) {
+		if(!ray_intersect(origin, dir, sphere, i, j)) {
 			return col1;
 		}
 		else {
@@ -178,7 +174,7 @@ public class Rendering {
 	public void render2(int height, int width, Sphere sphere, ArrayList<Vec3f> framebuffer, 
 			Vec3f col1, Vec3f col2) {
 		
-		Vec3f origin = new Vec3f(255, 255, 0);
+		Vec3f origin = new Vec3f(0, 0, 0);
 		for(int j=0;j<height;j++) {
 			for(int i=0;i<width;i++) {
 				//float x =  (float) ((2*(i + 0.5)/(float)width  - 1)* ((float)Math.tan(60.00))*width/(float)height);
@@ -187,9 +183,9 @@ public class Rendering {
 				float x = i - origin.points[0];
 				float y = j - origin.points[1];
 	            
-	            Vec3f dir = unit_vectorise(new Vec3f(x, y, -1));
+	            Vec3f dir = unit_vectorise(new Vec3f(x, y, 0));
 	            framebuffer.add(i+j*width, 
-	            		cast_ray(origin, dir, sphere, col1, col2));
+	            		cast_ray(origin, dir, sphere, col1, col2, x, y));
 			}
 		}
 	}
