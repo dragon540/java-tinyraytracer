@@ -34,20 +34,19 @@ public class Rendering {
 			for (int j = 0; j<height; j++) {
 		        for (int i = 0; i<width; i++) {
 		        	// filling pixels with a gradient of colors
-		        	framebuffer.add(i+j*width, new Vec3f(j/(float)height, i/(float)width, 0));
+		        	framebuffer.add(i+j*width, new Vec3f(127, 0, 0));
+		        	//framebuffer.add(i+j*width, new Vec3f(j/(float)height, i/(float)width, 0));
 		        }
 		    }
 			
-			// red
-			Vec3f c1 = new Vec3f(127, 0, 0);
-			// blue
-			Vec3f c2 = new Vec3f(0, 0, 127);
+			// background : blue
+			Vec3f c1 = new Vec3f(48, 213, 200);
+			// foreground : brown
+			Vec3f c2 = new Vec3f(181, 101, 29);
 			
-			Vec3f origin = new Vec3f(50, 50, 0);
+			Sphere sphere = new Sphere(128, 128, 0, 2);
 			
-			Sphere sphere = new Sphere(100, 100, 0, 50);
-			
-			cast_ray(framebuffer, height, width, origin, sphere, c1, c2);
+			render2(height, width, sphere, framebuffer, c1, c2);
 			
 			
 			// write pixel values to .ppm image file
@@ -58,12 +57,6 @@ public class Rendering {
 		        }
 		    }
 			
-			/***for(int i = 0; i < height*width; i++) {
-		        for(int j = 0; j<3; j++) {
-		        	byte val = (byte)(framebuffer.get(i)).rgb[j];
-		        	fstream.write(val);
-		        }
-		    }***/
 			fstream.close();
 		}
 		catch (Exception e) {
@@ -72,56 +65,132 @@ public class Rendering {
 		
 	}
 	
+	/*** Helper function to calculate dot product of 2 Vec3f objects ***/
+	public float dot_product(Vec3f v1, Vec3f v2) {
+		return ( (v1.points[0] * v2.points[0]) +
+				 (v1.points[1] * v2.points[1]) +
+				 (v1.points[2] * v2.points[2]) );
+ 	}
+	
+	/*** Helper function to calculate cross product of 2 Vec3f objects ***/
+	public Vec3f cross_product(Vec3f v1, Vec3f v2) {
+		float v1a = v1.points[0];
+		float v1b = v1.points[1];
+		float v1c = v1.points[2];
+		
+		float v2a = v1.points[0];
+		float v2b = v1.points[1];
+		float v2c = v1.points[2];
+		Vec3f resultant = new Vec3f( (v1b*v2c - v2b*v1c), (v1a*v2c - v2a*v1c), (v1a*v2b - v2a*v1b));
+		
+		return resultant;
+		
+	}
+	
+	/*** Helper function to calculate unit vector of Vec3f ***/
+	public Vec3f unit_vectorise(Vec3f pixel) {
+		float x = pixel.points[0];
+		float y = pixel.points[1];
+		float z = pixel.points[2];
+		float norm = (float)Math.sqrt(x*x + y*y + z*z);
+		Vec3f vec = new Vec3f(x/norm, y/norm, z/norm);
+	
+		return vec;
+	}
+	
+	/*** Helper function to subtract two Vec3f ***/
+	public Vec3f sub(Vec3f v1, Vec3f v2) {
+		Vec3f res = new Vec3f( (v1.points[0] - v2.points[0]), 
+							   (v1.points[1] - v2.points[1]),
+							   (v1.points[2] - v2.points[2]) );
+		return res;
+	}
+	
+	/*** Helper function to find distance between two vec3f ***/
+	public float dist(Vec3f v1, Vec3f v2) {
+		float x_comp = (float)Math.pow((double)(v1.points[0] - v2.points[0]), 2);
+		float y_comp = (float)Math.pow((double)(v1.points[1] - v2.points[1]), 2);
+		float z_comp = (float)Math.pow((double)(v1.points[2] - v2.points[2]), 2);
+		
+		float dist = (float)Math.sqrt(x_comp + y_comp + z_comp);
+		
+		return dist;
+	}
+	
+	/*** Helper function to find magnitude of a Vec3f ***/
+	public float magn(Vec3f v) {
+		float x = v.points[0];
+		float y = v.points[1];
+		float z = v.points[2];
+		return (float)Math.sqrt(x*x + y*y + z*z);
+		
+	}
+	
 	/**
 	 * To check if a given ray intersects a sphere (defined in Sphere.java),
 	 * when the origin of the ray and the direction of the ray is given.
 	 **/
 	public boolean ray_intersect(Vec3f origin, Vec3f dir, Sphere sphere) {
-		Vec3f vec_obj = new Vec3f(0, 0, 0);
+		//sphere.center.points[0] = 5;
+		//sphere.center.points[1] = 5;
+		//sphere.center.points[2] = 5;
 		
-		dir.points[0] = dir.points[0] - origin.points[0];
-		dir.points[1] = dir.points[1] - origin.points[1];
-		dir.points[2] = dir.points[2] - origin.points[2];
 		
-		// dist is the perpendicular distance form the center of the circle to the ray
-		float dist = Math.abs(vec_obj.dot_product(dir, sphere.center));
-		if(dist <= sphere.radius) {
-			return true;
+		Vec3f scenterToOrigin = sub(sphere.center, origin);
+		float x_vec = scenterToOrigin.points[0];
+		float y_vec = scenterToOrigin.points[1];
+		float z_vec = scenterToOrigin.points[2];
+		
+		float angle_cosine = dot_product(scenterToOrigin, dir)/(magn(scenterToOrigin));
+		
+		System.out.println(magn(dir)); // for debugging
+		
+		Vec3f sphereCenterOnRay = new Vec3f(x_vec*angle_cosine, y_vec*angle_cosine, z_vec*angle_cosine);
+		
+		float distance = dist(sphere.center, sphereCenterOnRay);
+		
+		System.out.println("radius" + sphere.radius);
+		System.out.println("distance" + distance);
+		System.out.println("cosine" + angle_cosine);
+		System.out.println("magn(scenter)" + magn(scenterToOrigin));
+		System.out.println("_x" + sphere.center.points[0]);
+		System.out.println("_y" + sphere.center.points[1]);
+		System.out.println("_z" + sphere.center.points[2]);
+		
+		if(distance > sphere.radius) {
+			return false;
 		}
 		else {
-			return false;
+			return true;
 		}
 	}
 	
 	
-	public void cast_ray(ArrayList<Vec3f> framebuffer, int height, int width,
-										Vec3f origin, Sphere sphere,
-										Vec3f c1, Vec3f c2) {
+	public Vec3f cast_ray(Vec3f origin, Vec3f dir, Sphere sphere, Vec3f col1, Vec3f col2) {
+		if(ray_intersect(origin, dir, sphere) == true) {
+			return col1;
+		}
+		else {
+			return col2;
+		}
+	}
+	
+	public void render2(int height, int width, Sphere sphere, ArrayList<Vec3f> framebuffer, 
+			Vec3f col1, Vec3f col2) {
+		
+		Vec3f origin = new Vec3f(255, 255, 0);
 		for(int j=0;j<height;j++) {
 			for(int i=0;i<width;i++) {
-				//Vec3f dir = new Vec3f(i-origin.points[0], j-origin.points[1], 0);
-				/***double norm = Math.sqrt(Math.abs(dir.points[0]*dir.points[0] + dir.points[1]*dir.points[1] + 
-						dir.points[2]*dir.points[2]));
-				dir.points[0] = dir.points[0]/(float)norm;
-				dir.points[1] = dir.points[1]/(float)norm;
-				dir.points[2] = dir.points[2]/(float)norm;****/
+				//float x =  (float) ((2*(i + 0.5)/(float)width  - 1)* ((float)Math.tan(60.00))*width/(float)height);
+	            //float y = (float) (-(2*(j + 0.5)/(float)height - 1)*Math.tan(60));
 				
-				float x =  (float) ((2*(i + 0.5)/(float)width  - 1)* ((float)Math.tan(60.00))*width/(float)height);
-	            float y = (float) (-(2*(j + 0.5)/(float)height - 1)*Math.tan(60));
-	            Vec3f dir = new Vec3f(x, y, -1);
-	            dir = dir.normalise(dir.points[0], dir.points[1], dir.points[2]);
-				
-				if(ray_intersect(origin, dir, sphere) == false) {
-					// give color1 to pixel
-					framebuffer.set(i+j*width, new Vec3f(c1.points[0], c1.points[1], c1.points[2]));
-				}
-				else {
-					// give color2 to pixel
-					framebuffer.set(i+j*width, new Vec3f(c2.points[0], c2.points[1], c2.points[2]));
-				}
+				float x = i - origin.points[0];
+				float y = j - origin.points[1];
+	            
+	            Vec3f dir = unit_vectorise(new Vec3f(x, y, -1));
+	            framebuffer.add(i+j*width, 
+	            		cast_ray(origin, dir, sphere, col1, col2));
 			}
 		}
 	}
-	
-	
 }
