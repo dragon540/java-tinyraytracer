@@ -31,22 +31,30 @@ public class Rendering {
 			ArrayList<Vec3f> framebuffer = new ArrayList<Vec3f>(width*height);
 			
 			// filling Vec3f(rgb values) to an arraylist for each pixel of the image file  
-			for (int j = 0; j<height; j++) {
-		        for (int i = 0; i<width; i++) {
-		        	// filling pixels with a gradient of colors
-		        	framebuffer.add(i+j*width, new Vec3f(127, 0, 0));
-		        	//framebuffer.add(i+j*width, new Vec3f(j/(float)height, i/(float)width, 0));
-		        }
-		    }
+			//for (int j = 0; j<height; j++) {
+		    //    for (int i = 0; i<width; i++) {
+		    //    	// filling pixels with a gradient of colors
+		    //   	framebuffer.add(i+j*width, new Vec3f(127, 0, 0));
+		    //    	//framebuffer.add(i+j*width, new Vec3f(j/(float)height, i/(float)width, 0));
+		    //    }
+		    //}
 			
 			// background : blue
-			Vec3f c1 = new Vec3f(48, 213, 200);
-			// foreground : brown
-			Vec3f c2 = new Vec3f(181, 101, 29);
+			Vec3f bgcol = new Vec3f(48, 213, 200);
 			
-			Sphere sphere = new Sphere(100, 100, 0, 15);
+			ArrayList<Sphere> sphereList = new ArrayList<Sphere>(3);
+			sphereList.add(new Sphere(127, 127, 0, 50));
+			sphereList.add(new Sphere(145, 210, 0, 30));
+			sphereList.add(new Sphere(50, 190, 0, 25));
 			
-			render2(height, width, sphere, framebuffer, c1, c2);
+			ArrayList<Vec3f> sphereColor = new ArrayList<Vec3f>(3);
+			sphereColor.add(new Vec3f(255, 0, 0));
+			sphereColor.add(new Vec3f(0, 255, 0));
+			sphereColor.add(new Vec3f(0, 0, 255));
+			
+			Vec3f camera_origin = new Vec3f(0, 0, 0);
+			
+			render2(height, width, camera_origin, sphereList, sphereColor, framebuffer, bgcol);
 			
 			
 			// write pixel values to .ppm image file
@@ -130,16 +138,14 @@ public class Rendering {
 	 * To check if a given ray intersects a sphere (defined in Sphere.java),
 	 * when the origin of the ray and the direction of the ray is given.
 	 **/
-	public boolean ray_intersect(Vec3f origin, Vec3f dir, Sphere sphere, float i, float j) {
-		Vec3f scenterToinit = sub(sphere.center, new Vec3f(i, j, 0));
+	public boolean ray_intersect(Vec3f origin, Vec3f dir, Sphere sphere, float i, float j, float z) {
+		Vec3f spherecenterToinit = sub(sphere.center, new Vec3f(i, j, z));
 		
-		float x_vec = scenterToinit.points[0];
-		float y_vec = scenterToinit.points[1];
-		float z_vec = scenterToinit.points[2];
+		float x_vec = spherecenterToinit.points[0];
+		float y_vec = spherecenterToinit.points[1];
+		float z_vec = spherecenterToinit.points[2];
 		
-		float angle_cosine = dot_product(scenterToinit, dir)/(magn(scenterToinit));
-		
-		System.out.println(magn(dir)); // for debugging
+		float angle_cosine = -1*Math.abs( dot_product(spherecenterToinit, dir)/(magn(spherecenterToinit)) );
 		
 		Vec3f sphereCenterOnRay = new Vec3f(x_vec*angle_cosine, y_vec*angle_cosine, z_vec*angle_cosine);
 		
@@ -148,10 +154,10 @@ public class Rendering {
 		System.out.println("radius" + sphere.radius);
 		System.out.println("distance" + distance);
 		System.out.println("cosine" + angle_cosine);
-		System.out.println("magn(scenter)" + magn(scenterToinit));
-		System.out.println("_x" + scenterToinit.points[0]);
-		System.out.println("_y" + scenterToinit.points[1]);
-		System.out.println("_z" + scenterToinit.points[2]);
+		System.out.println("magn(scenter)" + magn(spherecenterToinit));
+		System.out.println("_x" + spherecenterToinit.points[0]);
+		System.out.println("_y" + spherecenterToinit.points[1]);
+		System.out.println("_z" + spherecenterToinit.points[2]);
 		
 		if(distance > sphere.radius) {
 			return false;
@@ -162,30 +168,32 @@ public class Rendering {
 	}
 	
 	
-	public Vec3f cast_ray(Vec3f origin, Vec3f dir, Sphere sphere, Vec3f col1, Vec3f col2, float i, float j) {
-		if(!ray_intersect(origin, dir, sphere, i, j)) {
-			return col1;
+	public Vec3f cast_ray(Vec3f origin, Vec3f dir, 
+			ArrayList<Sphere> sphereList, ArrayList<Vec3f> sphereColour, 
+			Vec3f bgcol, float i, float j, float z) {
+		
+		for(int idx=0; idx < sphereList.size(); idx++) {
+			if(ray_intersect(origin, dir, sphereList.get(idx), i, j, z)) {
+				return sphereColour.get(idx);
+			}
 		}
-		else {
-			return col2;
-		}
+		return bgcol;
 	}
 	
-	public void render2(int height, int width, Sphere sphere, ArrayList<Vec3f> framebuffer, 
-			Vec3f col1, Vec3f col2) {
+	public void render2(int height, int width, Vec3f origin, 
+			ArrayList<Sphere> sphereList, ArrayList<Vec3f> sphereColour,
+			ArrayList<Vec3f> framebuffer, Vec3f bgcol) {
 		
-		Vec3f origin = new Vec3f(0, 0, 0);
 		for(int j=0;j<height;j++) {
 			for(int i=0;i<width;i++) {
-				//float x =  (float) ((2*(i + 0.5)/(float)width  - 1)* ((float)Math.tan(60.00))*width/(float)height);
-	            //float y = (float) (-(2*(j + 0.5)/(float)height - 1)*Math.tan(60));
 				
 				float x = i - origin.points[0];
 				float y = j - origin.points[1];
+				float z = 0;
 	            
 	            Vec3f dir = unit_vectorise(new Vec3f(x, y, 0));
 	            framebuffer.add(i+j*width, 
-	            		cast_ray(origin, dir, sphere, col1, col2, x, y));
+	            		cast_ray(origin, dir, sphereList, sphereColour, bgcol, x, y, z));
 			}
 		}
 	}
